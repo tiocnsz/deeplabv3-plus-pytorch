@@ -218,7 +218,7 @@ if __name__ == "__main__":
     #------------------------------------------------------------------#
     #   VOCdevkit_path  数据集路径
     #------------------------------------------------------------------#
-    VOCdevkit_path  = 'VOCdevkit'
+    VOCdevkit_path  = 'gray_wood_dataset'
     #------------------------------------------------------------------#
     #   建议选项：
     #   种类少（几类）时，设置为True
@@ -349,9 +349,9 @@ if __name__ == "__main__":
     #---------------------------#
     #   读取数据集对应的txt
     #---------------------------#
-    with open(os.path.join(VOCdevkit_path, "VOC2007/ImageSets/Segmentation/train.txt"),"r") as f:
+    with open(os.path.join(VOCdevkit_path, "ImageSets/Segmentation/train.txt"),"r") as f:
         train_lines = f.readlines()
-    with open(os.path.join(VOCdevkit_path, "VOC2007/ImageSets/Segmentation/val.txt"),"r") as f:
+    with open(os.path.join(VOCdevkit_path, "ImageSets/Segmentation/val.txt"),"r") as f:
         val_lines = f.readlines()
     num_train   = len(train_lines)
     num_val     = len(val_lines)
