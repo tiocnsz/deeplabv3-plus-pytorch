@@ -3,7 +3,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 from nets.xception import xception
 from nets.mobilenetv2 import mobilenetv2
-
+from nets.mobilenetv3 import mobilenetv3
+class MobileNetV3(nn.Module):
+    def __init__(self, downsample_factor=16, pretrained=True):
+        super(MobileNetV3, self).__init__()
+         
+        model = mobilenetv3(pretrained)
+        self.features = model.features[:-4]
+    
+    def forward(self, x):
+        low_level_features = self.features[:4](x)
+        x = self.features[4:](low_level_features)
+        return low_level_features, x
 class MobileNetV2(nn.Module):
     def __init__(self, downsample_factor=8, pretrained=True):
         super(MobileNetV2, self).__init__()
@@ -112,7 +123,35 @@ class ASPP(nn.Module):
 		feature_cat = torch.cat([conv1x1, conv3x3_1, conv3x3_2, conv3x3_3, global_feature], dim=1)
 		result = self.conv_cat(feature_cat)
 		return result
+class PPM(nn.Module):
+    def __init__(self, inputsz, in_dim, dim_out, bins):
+        super(PPM, self).__init__()
+        self.features = []
+        for bin in bins:
+            kernelsz = inputsz - (bin - 1) * 1
+            self.features.append(
+                nn.AvgPool2d(kernel_size=kernelsz, stride=1, padding=0),
+                # nn.AdaptiveAvgPool2d(16-kernelsz+1),
+                # nn.MaxPool2d(kernel_size=kernelsz, stride=1, padding=0),
+            )
+        self.features = nn.ModuleList(self.features)
+        self.conv_cat = nn.Sequential(
+            nn.Conv2d(in_dim * 4, dim_out, 1, 1, padding=0, bias=True),
+            nn.BatchNorm2d(dim_out, momentum=0.1),
+            nn.ReLU(inplace=True),
+        )
+    def forward(self, x):
+        x_size = x.size()
+        out = [x]
+        for f in self.features:
+            temp = f(x)
+            temp = F.interpolate(temp, x_size[2:], mode="bilinear", align_corners=True)
+            # temp = F.interpolate(temp, size=(int(x_size[2]),int(x_size[3])), mode="bilinear", align_corners=False)
+            out.append(temp)
+        out = torch.cat(out, dim=1)
+        result = self.conv_cat(out)
 
+        return result
 class DeepLab(nn.Module):
     def __init__(self, num_classes, backbone="mobilenet", pretrained=True, downsample_factor=16):
         super(DeepLab, self).__init__()
@@ -134,6 +173,15 @@ class DeepLab(nn.Module):
             self.backbone = MobileNetV2(downsample_factor=downsample_factor, pretrained=pretrained)
             in_channels = 320
             low_level_channels = 24
+        elif backbone=="mobilenetv3":
+            #----------------------------------#
+            #   获得两个特征层
+            #   浅层特征    [64,64,24]
+            #   主干部分    [16,16,96]
+            #----------------------------------#
+            self.backbone = MobileNetV3(downsample_factor=downsample_factor, pretrained=pretrained)
+            in_channels = 96
+            low_level_channels = 24            
         else:
             raise ValueError('Unsupported backbone - `{}`, Use mobilenet, xception.'.format(backbone))
 
@@ -141,8 +189,8 @@ class DeepLab(nn.Module):
         #   ASPP特征提取模块
         #   利用不同膨胀率的膨胀卷积进行特征提取
         #-----------------------------------------#
-        self.aspp = ASPP(dim_in=in_channels, dim_out=256, rate=16//downsample_factor)
-        
+        # self.aspp = ASPP(dim_in=in_channels, dim_out=256, rate=16//downsample_factor)
+        self.ppm = PPM(inputsz=16, in_dim=in_channels, dim_out=256, bins=[5, 9, 13])
         #----------------------------------#
         #   浅层特征边
         #----------------------------------#
@@ -153,12 +201,12 @@ class DeepLab(nn.Module):
         )		
 
         self.cat_conv = nn.Sequential(
-            nn.Conv2d(48+256, 256, 3, stride=1, padding=1),
+            nn.Conv2d(48+256, 256, 3, stride=1, padding=1, groups=16),
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.Dropout(0.5),
 
-            nn.Conv2d(256, 256, 3, stride=1, padding=1),
+            nn.Conv2d(256, 256, 3, stride=1, padding=1, groups=32),
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
 
@@ -174,7 +222,8 @@ class DeepLab(nn.Module):
         #   x : 主干部分-利用ASPP结构进行加强特征提取
         #-----------------------------------------#
         low_level_features, x = self.backbone(x)
-        x = self.aspp(x)
+        # x = self.aspp(x)
+        x = self.ppm(x)
         low_level_features = self.shortcut_conv(low_level_features)
         
         #-----------------------------------------#
