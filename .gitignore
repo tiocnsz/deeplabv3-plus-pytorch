@@ -9,6 +9,7 @@ logs/
 model_data/
 .temp_miou_out/
 gray_wood_dataset/
+color_wood_dataset/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
