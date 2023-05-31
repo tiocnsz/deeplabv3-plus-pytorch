@@ -1,6 +1,5 @@
 import os
 import datetime
-
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
@@ -99,7 +98,7 @@ if __name__ == "__main__":
     #   一般来讲，网络从0开始的训练效果会很差，因为权值太过随机，特征提取效果不明显，因此非常、非常、非常不建议大家从0开始训练！
     #   如果一定要从0开始，可以了解imagenet数据集，首先训练分类模型，获得网络的主干部分权值，分类模型的 主干部分 和该模型通用，基于此进行训练。
     #----------------------------------------------------------------------------------------------------------------------------#
-    model_path      = ""
+    model_path      = "logs\ep200-loss0.014-val_loss0.016.pth"
     #---------------------------------------------------------#
     #   downsample_factor   下采样的倍数8、16 
     #                       8下采样的倍数较小、理论上效果更好。
@@ -145,14 +144,14 @@ if __name__ == "__main__":
     #   占用的显存较小，仅对网络进行微调
     #   Init_Epoch          模型当前开始的训练世代，其值可以大于Freeze_Epoch，如设置：
     #                       Init_Epoch = 60、Freeze_Epoch = 50、UnFreeze_Epoch = 100
-    #                       会跳过冻结阶段，直接从60代开始，并调整对应的学习率。
+    #                       会跳过冻结阶段，直接从60代开始，并调整对应的学习率。pip 
     #                       （断点续练时使用）
     #   Freeze_Epoch        模型冻结训练的Freeze_Epoch
     #                       (当Freeze_Train=False时失效)
     #   Freeze_batch_size   模型冻结训练的batch_size
     #                       (当Freeze_Train=False时失效)
     #------------------------------------------------------------------#
-    Init_Epoch          = 0
+    Init_Epoch          = 200
     Freeze_Epoch        = 50
     Freeze_batch_size   = 16
     #------------------------------------------------------------------#

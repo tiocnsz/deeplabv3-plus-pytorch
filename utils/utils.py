@@ -37,7 +37,7 @@ def get_lr(optimizer):
         return param_group['lr']
 
 def preprocess_input(image):
-    image /= 255.0
+    # image /= 255.0
     return image
 
 def show_config(**kwargs):

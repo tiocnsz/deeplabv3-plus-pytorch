@@ -269,7 +269,7 @@ class DeeplabV3(object):
 
         im                  = torch.zeros(1, 3, *self.input_shape).to('cpu')  # image size(1, 3, 512, 512) BCHW
         input_layer_names   = ["images"]
-        output_layer_names  = ["output"]
+        output_layer_names  = ["outputs"]
         
         # Export the model
         print(f'Starting export with onnx {onnx.__version__}.')
