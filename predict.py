@@ -67,7 +67,7 @@ if __name__ == "__main__":
     #   onnx_save_path      指定了onnx的保存路径
     #-------------------------------------------------------------------------#
     simplify        = True
-    onnx_save_path  = "deeplabv3-plus-pytorch\model_data\models_tio_0530_t0.onnx"
+    onnx_save_path  =r"D:\model_train\deeplabv3-plus-pytorch\model_data\models_tio_0502_all3.onnx"
 
     if mode == "predict":
         '''
